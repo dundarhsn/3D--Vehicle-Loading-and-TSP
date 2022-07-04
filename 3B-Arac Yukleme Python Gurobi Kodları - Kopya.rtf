@@ -1,0 +1,68 @@
+#-*- coding: utf-8 -*-
+from SolverStudio import*
+from gurobipy import*
+m = Model()
+x, y, z, s,a,b,c,d,e,f={},{},{},{},{},{},{},{},{},{}
+for i in N:
+   x[i] = m.addVar(vtype = "c", ub=L)
+   y[i] = m.addVar(vtype = "c", ub=W)
+   z[i] = m.addVar(vtype = "c", ub=H)
+   s[i] = m.addVar(vtype = "b")
+
+for i in N:
+   for j in N:
+      a[i,j]=m.addVar(vtype="b")
+      b[i,j]=m.addVar(vtype="b")
+      c[i,j]=m.addVar(vtype="b")
+      d[i,j]=m.addVar(vtype="b")
+      e[i,j]=m.addVar(vtype="b")
+      f[i,j]=m.addVar(vtype="b")
+m.update()
+
+# kar max için bu amaç fonksiyonunu seçiniz
+m.setObjective(quicksum(u[i]*s[i] for i in N for i in N),GRB.MAXIMIZE)
+# kullanılan hacmi max için bu amaç fonksiyonunu seçiniz
+#m.setObjective(quicksum((li[i]*wi[i]*hi[i]*s[i])/(L*W*H) for i in N for i in N),GRB.MAXIMIZE)
+for i in N:
+   for j in N:
+      if i<j:
+         m.addConstr(x[i]+li[i]<=x[j]+M*(1-a[i,j]))
+         m.addConstr(x[j]+li[j]<=x[i]+M*(1-b[i,j]))
+         m.addConstr(y[i]+wi[i]<=y[j]+M*(1-c[i,j]))
+         m.addConstr(y[j]+wi[j]<=y[i]+M*(1-d[i,j]))
+         m.addConstr(z[i]+hi[i]<=z[j]+M*(1-e[i,j]))
+         m.addConstr(z[j]+hi[j]<=z[i]+M*(1-f[i,j]))
+
+for i in N:
+   for j in N:
+      if i<j:
+         m.addConstr(a[i,j]+b[i,j]+c[i,j]+d[i,j]+e[i,j]+f[i,j]>= s[i]+s[j]-1)
+for i in N:
+   m.addConstr(x[i]+li[i]<=L+M*(1-s[i]))
+for i in N:
+   m.addConstr(x[i]+wi[i]<=W+M*(1-s[i]))
+for i in N:
+   m.addConstr(x[i]+hi[i]<=H+M*(1-s[i]))
+
+m.optimize()
+
+if m.status==GRB.OPTIMAL:
+     total=m.objVal
+   for i in N:
+      X[i] = x[i].x
+      Y[i] = y[i].x
+      Z[i] = z[i].x
+      S[i] = s[i].x
+      for j in N:
+         A[i,j]=a[i,j].x
+         B[i,j]=b[i,j].x
+         C[i,j]=c[i,j].x
+         D[i,j]=d[i,j].x
+         E[i,j]=e[i,j].x
+         F[i,j]=f[i,j].x
+else:
+   for i in N:
+      x[i]=""
+      for j in N:
+         a[i,j]=""
+   total="No Solution"

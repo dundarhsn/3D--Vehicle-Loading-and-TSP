@@ -1,0 +1,46 @@
+
+from gurobipy import*
+from SolverStudio import*
+m=Model()
+
+X={}
+U={}
+for i in nodes:
+   U[i]=m.addVar(vtype="c")
+   for j in nodes:
+      X[i,j]=m.addVar(vtype="b")
+m.update()
+#S kısmına siz talep noktalarını yazınız
+S=[1,2,3,4,5,6,7,8,9,10,11,12,13]
+m.setObjective(quicksum(X[i,j]*dist[i,j] for i in nodes for j in nodes if i!=j),GRB.MINIMIZE)
+for i in S:
+   m.addConstr(sum(X[j,i]for j in S if i!=j)==1)
+for i in S:
+   m.addConstr(sum(X[i,j]for j in S if i!=j)==1)
+
+for i in S:
+   for j in S:
+      if i>=2 and j>=2 and i!=j:
+            m.addConstr(U[i]-U[j]+N*X[i,j]<=N-1)
+for i in S:
+   if i>=2:
+      m.addConstr(U[i]<=N-1-(N-2)*X[1,i])
+for i in S:
+   if i>=2:
+      m.addConstr(U[i]>=1+(N-2)*X[i,1])      
+      
+m.optimize()
+
+if m.status==GRB.OPTIMAL:
+   for i in nodes:
+      u[i]=U[i].x
+      for j in nodes:
+         x[i,j]=X[i,j].x
+   
+   total=m.objVal
+else:
+   for i in nodes:
+      u[i]=""
+      for j in nodes:
+         x[i,j]=""
+   tot_dist="No Solution"
